@@ -6,14 +6,14 @@ define(function(require, exports, module) {
     var GenericSync     = require('famous/inputs/GenericSync');
     var Transitionable  = require('famous/transitions/Transitionable');
 
-    var PageView        = require('./PageView');
-    var MenuView        = require('./MenuView');
+    var SearchView        = require('./SearchView');
+    var FeatureView        = require('./FeatureView');
 
     function AppView() {
         View.apply(this, arguments);
 
-        _createPageView.call(this);
-        _createMenuView.call(this);
+        _createSearchView.call(this);
+        _createFeatureView.call(this);
         _handleTouch.call(this);
     }
 
@@ -29,15 +29,15 @@ define(function(require, exports, module) {
         }
     };
 
-    function _createPageView() {
-        this.pageView = new PageView();
-        this.pageView.on('menuToggle', this.toggleMenu.bind(this));
+    function _createSearchView() {
+        this.searchView = new SearchView();
+        this.searchView.on('menuToggle', this.toggleMenu.bind(this));
 
         this.menuToggle = false;
     }
 
-    function _createMenuView() {
-        this.menuView = new MenuView();
+    function _createFeatureView() {
+        this.featureView = new FeatureView();
     }
 
     function _handleTouch() {
@@ -47,11 +47,11 @@ define(function(require, exports, module) {
             return this.pageViewPos.get(0);
         }.bind(this), {direction: GenericSync.DIRECTION_X});
 
-        this.pageView.pipe(this.sync);
+        this.searchView.pipe(this.sync);
 
         this.sync.on('update', function(data) {
             if(this.pageViewPos.get() === 0 && data.p > 0) {
-                this.menuView.animateStrips();
+                this.FeatureView.animateStrips();
             }
 
             this.pageViewPos.set(Math.max(0, data.p));
@@ -82,7 +82,7 @@ define(function(require, exports, module) {
             this.slideLeft();
         } else {
             this.slideRight();
-            this.menuView.animateStrips();
+            this.featureView.animateStrips();
         }
         this.menuToggle = !this.menuToggle;
     };
@@ -106,12 +106,12 @@ define(function(require, exports, module) {
             // opacity: 0.5,
             // size: [300, 300],
             transform: Transform.translate(0, 0, -1),
-            target: this.menuView.render()
+            target: this.featureView.render()
         });
 
         this.spec.push({
             transform: Transform.translate(this.pageViewPos.get(), 0, 0),
-            target: this.pageView.render()
+            target: this.searchView.render()
         });
 
         return this.spec;
