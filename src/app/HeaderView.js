@@ -54,7 +54,7 @@ define(function(require, exports, module) {
         this._add(this.iconModifier).add(this.iconSurface);
     }
 
-    function _setListeners() {
+    /*function _setListeners() {
         this.hamburgerSurface.on('touchstart', function() {
             this.hamburgerModifier.setOpacity(0.5);
         }.bind(this));
@@ -63,7 +63,7 @@ define(function(require, exports, module) {
             this.hamburgerModifier.setOpacity(1);
             this._eventOutput.emit('menuToggle');
         }.bind(this));
-    }
+    }*/
 
     module.exports = HeaderView;
 });

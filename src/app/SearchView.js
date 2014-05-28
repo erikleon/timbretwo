@@ -38,7 +38,8 @@ define(function(require, exports, module) {
     }
 
     function _createBody() {
-        this.bodySurface = new Surface({
+        this.layout = new SequentialLayout();
+        /*this.bodySurface = new Surface({
             content: '<img width="' + window.innerWidth + '" src="../img/body.png"/>'
         });
 
@@ -48,7 +49,7 @@ define(function(require, exports, module) {
             transform: Transform.translate(0, 44, 0)
         });
 
-        this._add(this.bodyModifier).add(this.bodySurface);
+        this._add(this.bodyModifier).add(this.bodySurface);*/
     }
 
     function _setListeners() {

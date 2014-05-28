@@ -14,7 +14,7 @@ define(function(require, exports, module) {
 
         _createSearchView.call(this);
         _createFeatureView.call(this);
-        _handleTouch.call(this);
+        //_handleTouch.call(this);
     }
 
     AppView.prototype = Object.create(View.prototype);
@@ -31,15 +31,18 @@ define(function(require, exports, module) {
 
     function _createSearchView() {
         this.searchView = new SearchView();
-        this.searchView.on('menuToggle', this.toggleMenu.bind(this));
+        //this.searchView.on('menuToggle', this.toggleMenu.bind(this));
 
-        this.menuToggle = false;
+        //this.menuToggle = false;
+        this.searchMod = new Modifier();
+
+        this._add(this.searchMod).add(this.searchView);
     }
 
     function _createFeatureView() {
         this.featureView = new FeatureView();
     }
-
+/*
     function _handleTouch() {
         this.pageViewPos = new Transitionable(0);
 
@@ -75,9 +78,9 @@ define(function(require, exports, module) {
                 }
             }
         }).bind(this));
-    }
+    }*/
 
-    AppView.prototype.toggleMenu = function() {
+    /*AppView.prototype.toggleMenu = function() {
         if(this.menuToggle) {
             this.slideLeft();
         } else {
@@ -115,7 +118,7 @@ define(function(require, exports, module) {
         });
 
         return this.spec;
-    };
+    };*/
 
     module.exports = AppView;
 });
