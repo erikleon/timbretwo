@@ -8,7 +8,7 @@ define(function(require, exports, module) {
         View.apply(this, arguments);
 
         _createHeader.call(this);
-        _setListeners.call(this);
+        //_setListeners.call(this);
     }
 
     HeaderView.prototype = Object.create(View.prototype);
