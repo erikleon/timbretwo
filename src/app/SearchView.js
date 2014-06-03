@@ -11,6 +11,7 @@ define(function(require, exports, module) {
     var ContainerSurface    = require('famous/surfaces/ContainerSurface');
     var SequentialLayout    = require('famous/views/SequentialLayout');
     var ScrollView          = require('famous/views/ScrollView');
+    var StateModifier       = require('famous/modifiers/StateModifier');
 
     function SearchView() {
         View.apply(this, arguments);
@@ -18,7 +19,7 @@ define(function(require, exports, module) {
         _createBacking.call(this);
         _createHeaderView.call(this);
         _createBody.call(this);
-        //_setListeners.call(this);
+        _setListeners.call(this);
     }
 
     SearchView.prototype = Object.create(View.prototype);
@@ -38,22 +39,17 @@ define(function(require, exports, module) {
     function _createHeaderView() {
         this.headerView = new HeaderView();
 
+        this.headerMod = new Modifier({
+            transform: Transform.translate(0, 0, 1),
+        });
+
         this.subscribe(this.headerView);
 
-        this._add(this.headerView);
+        this._add(this.headerMod).add(this.headerView);
     }
 
     function _createBody() {
         var scrollView = new ScrollView();
-
-        var containerSurface = new ContainerSurface({
-            size: [undefined, window.innerHeight - 44],
-            properties: {
-                overflow: 'hidden',
-            }
-        });
-
-        var searchLayout = new SequentialLayout();
 
         var searchResults = [];
 
@@ -92,17 +88,20 @@ define(function(require, exports, module) {
             {name: 'Chrome sparks'},            
         ];
 
-        containerSurface.add(scrollView);
         scrollView.sequenceFrom(searchResults);
 
-        var temp; 
+        this.temp; 
 
         var lineLengths = [];
+
+        var marginCorrected = [];
+
+        var xPos = [];
 
         for (var i = 0; i < bandNames.length; i++) {
             // console.log((window.innerHeight - 44) / 11);
 
-            temp = new ContainerSurface({
+            this.temp = new ContainerSurface({
                 size: [undefined, ((window.innerHeight - 44) / 12)],
                 properties: {
                     backgroundColor: 'white',
@@ -114,13 +113,13 @@ define(function(require, exports, module) {
                 }
             });
 
-            temp.pipe(scrollView);
-            searchResults.push(temp);
+            this.temp.pipe(scrollView);
+            searchResults.push(this.temp);
 
             var marginRand = Math.floor((Math.random() * 175) + 1);
 
-            var nameSurface = new Surface({
-                size: [bandNames[i].name.length * 11, ((window.innerHeight - 44) / 12) - 10],
+            this.nameSurface = new Surface({
+                size: [bandNames[i].name.length * 11, ((window.innerHeight - 44) / 12) - 15],
                 content: bandNames[i].name,
                 properties: {
                     backgroundColor: 'black',
@@ -132,42 +131,63 @@ define(function(require, exports, module) {
                 }
             });
 
-            
-
             lineLengths.push(marginRand);
 
-            var nameLines = new Surface({
-                size: [lineLengths[i], 5],
+            var rightMargin = Math.floor((window.innerWidth - lineLengths[i]) - (bandNames[i].name.length * 11)); 
+
+            var axis = 0;
+
+            if (lineLengths[i] < 95){
+                marginCorrected.push(rightMargin);
+                var axis = 1;
+                xPos.push(axis);
+            } else {
+                marginCorrected.push(lineLengths[i]);
+                var axis = 0;
+                xPos.push(axis);
+            }
+
+            this.nameLines = new Surface({
+                size: [marginCorrected[i], 3],
                 properties: {
                     backgroundColor: 'black',
+                    marginTop: '10px,',
                 }
             });
 
-            console.log(lineLengths);
+            //console.log(marginCorrected);
 
-            temp.add(nameSurface);
-            temp.add(nameLines);
+            var lineState = new StateModifier({origin: [xPos[i], 0.5]});
+
+            var nameState = new StateModifier({origin: [0, 0.5]});
+
+            this.temp.add(nameState).add(this.nameSurface);
+            this.temp.add(lineState).add(this.nameLines);
+
+            scrollView.subscribe(this.temp);
+            this.temp.pipe(this.nameSurface);
+
         }
 
         this.add(new Modifier({ transform: Transform.translate(0, 44, 0),})).add(scrollView);
-        /*this.bodySurface = new Surface({
-            content: '<img width="' + window.innerWidth + '" src="../img/body.png"/>'
-        });
-
-        this.bodySurface.pipe(this._eventOutput);
-
-        this.bodyModifier = new Modifier({
-            transform: Transform.translate(0, 44, 0)
-        });
-
-        this._add(this.bodyModifier).add(this.bodySurface);*/
     }
 
     function _setListeners() {
-        this._eventInput.on('menuToggle', function() {
+        this.temp.on('touchstart', function() {
+            console.log('herere');
+        }.bind(this));
+
+        this.temp.on('touchend', function() {
+            this.nameSurface[i].setOpacity(1);
             this._eventOutput.emit('menuToggle');
         }.bind(this));
     }
+
+    // function _setListeners() {
+    //     this._eventInput.on('menuToggle', function() {
+    //         this._eventOutput.emit('menuToggle');
+    //     }.bind(this));
+    // }
 
     module.exports = SearchView;
 });

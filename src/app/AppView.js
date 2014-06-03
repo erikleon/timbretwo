@@ -41,6 +41,12 @@ define(function(require, exports, module) {
 
     function _createFeatureView() {
         this.featureView = new FeatureView();
+
+        this.featureMod = new Modifier({
+            transform: Transform.translate(320, 0, 0)
+        });
+
+        this._add(this.featureMod).add(this.featureView);
     }
 /*
     function _handleTouch() {
