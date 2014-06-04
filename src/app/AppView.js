@@ -31,9 +31,11 @@ define(function(require, exports, module) {
 
     function _createSearchView() {
         this.searchView = new SearchView();
+
         //this.searchView.on('menuToggle', this.toggleMenu.bind(this));
 
-        //this.menuToggle = false;
+        this.menuToggle = false;
+
         this.searchMod = new Modifier();
 
         this._add(this.searchMod).add(this.searchView);
@@ -42,8 +44,12 @@ define(function(require, exports, module) {
     function _createFeatureView() {
         this.featureView = new FeatureView();
 
+        this.featureView.on('menuToggle', this.toggleMenu.bind(this));
+
+        this.menuToggle = false;
+
         this.featureMod = new Modifier({
-            transform: Transform.translate(320, 0, 0)
+            transform: Transform.translate(window.innerWidth, 0, 3)
         });
 
         this._add(this.featureMod).add(this.featureView);
@@ -86,29 +92,25 @@ define(function(require, exports, module) {
         }).bind(this));
     }*/
 
-    /*AppView.prototype.toggleMenu = function() {
+    AppView.prototype.toggleMenu = function() {
         if(this.menuToggle) {
-            this.slideLeft();
-        } else {
             this.slideRight();
-            this.featureView.animateStrips();
+        } else {
+            this.slideLeft();
+            //this.featureView.animateStrips();
         }
         this.menuToggle = !this.menuToggle;
     };
 
     AppView.prototype.slideLeft = function() {
-        this.pageViewPos.set(0, this.options.transition, function() {
-            this.menuToggle = false;
-        }.bind(this));
+        this.featureMod.setTransform(Transform.translate(0, 0, 3))
     };
 
     AppView.prototype.slideRight = function() {
-        this.pageViewPos.set(276, this.options.transition, function() {
-            this.menuToggle = true;
-        }.bind(this));
+        this.featureMod.setTransform(Transform.translate(window.innerWidth, 0, 3))
     };
 
-    AppView.prototype.render = function() {
+    /*AppView.prototype.render = function() {
         this.spec = [];
 
         this.spec.push({

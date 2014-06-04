@@ -12,6 +12,7 @@ define(function(require, exports, module) {
     var SequentialLayout    = require('famous/views/SequentialLayout');
     var ScrollView          = require('famous/views/ScrollView');
     var StateModifier       = require('famous/modifiers/StateModifier');
+    var EventHandler        = require('famous/core/EventHandler');
 
     function SearchView() {
         View.apply(this, arguments);
@@ -24,6 +25,11 @@ define(function(require, exports, module) {
 
     SearchView.prototype = Object.create(View.prototype);
     SearchView.prototype.constructor = SearchView;
+
+    SearchView.DEFAULT_OPTIONS = {
+        nameArray: [],
+    };
+
 
     function _createBacking() {
         var backing = new Surface({
@@ -49,7 +55,7 @@ define(function(require, exports, module) {
     }
 
     function _createBody() {
-        var scrollView = new ScrollView();
+        this.scrollView = new ScrollView();
 
         var searchResults = [];
 
@@ -88,13 +94,17 @@ define(function(require, exports, module) {
             {name: 'Chrome sparks'},            
         ];
 
-        scrollView.sequenceFrom(searchResults);
+        this.scrollView.sequenceFrom(searchResults);
 
-        this.temp; 
+        this.temp;
+
+        this.eventHandler = new EventHandler();
 
         var lineLengths = [];
 
         var marginCorrected = [];
+
+        this.nameSurfaces = [];
 
         var xPos = [];
 
@@ -113,7 +123,7 @@ define(function(require, exports, module) {
                 }
             });
 
-            this.temp.pipe(scrollView);
+            this.temp.pipe(this.scrollView);
             searchResults.push(this.temp);
 
             var marginRand = Math.floor((Math.random() * 175) + 1);
@@ -130,6 +140,8 @@ define(function(require, exports, module) {
                     fontSize: '1.25em',
                 }
             });
+
+            this.options.nameArray.push(this.nameSurface);
 
             lineLengths.push(marginRand);
 
@@ -157,31 +169,61 @@ define(function(require, exports, module) {
 
             //console.log(marginCorrected);
 
-            var lineState = new StateModifier({origin: [xPos[i], 0.5]});
+            this.lineState = new StateModifier({origin: [xPos[i], 0.5]});
 
-            var nameState = new StateModifier({origin: [0, 0.5]});
+            this.nameState = new StateModifier({origin: [0, 0.5]});
 
-            this.temp.add(nameState).add(this.nameSurface);
-            this.temp.add(lineState).add(this.nameLines);
+            this.temp.add(this.nameState).add(this.nameSurface);
+            this.temp.add(this.lineState).add(this.nameLines);
 
-            scrollView.subscribe(this.temp);
-            this.temp.pipe(this.nameSurface);
+            this.scrollView.subscribe(this.temp);
+            this.nameSurface.pipe(this.eventHandler);
 
         }
 
-        this.add(new Modifier({ transform: Transform.translate(0, 44, 0),})).add(scrollView);
+        this.add(new Modifier({ transform: Transform.translate(0, 44, 0),})).add(this.scrollView);
     }
 
     function _setListeners() {
-        this.temp.on('touchstart', function() {
-            console.log('herere');
+        this.eventHandler.on('touchstart', function() {
+            this.tagetElement = event.target;
+            //console.log(event.target);
+            console.log(this.nameSurfaces);
         }.bind(this));
 
-        this.temp.on('touchend', function() {
-            this.nameSurface[i].setOpacity(1);
+        this.eventHandler.on('touchend', function() {
+            this._eventOutput.emit('animateList');
             this._eventOutput.emit('menuToggle');
+            console.log('zzzzz');
+            SearchView.prototype.animateList(this);
         }.bind(this));
     }
+
+    SearchView.prototype.animateList = function() {
+        if(this.animateList) {
+            this.listBreak();
+        } else {
+            this.listAssemble();
+            //this.featureView.animateStrips();
+        }
+        this.animateList = !this.animateList;
+    };
+
+    SearchView.prototype.listBreak = function() {
+        console.log(this.options.nameArray);
+        var l = this.options.nameArray.length;
+        for (var i = 0; i < l; i++){
+            if (nameSurfaces[i] != this.tagetElement){
+
+            } else {
+
+            }
+        }
+    };
+
+    SearchView.prototype.listAssemble = function() {
+        console.log('xxxx');
+    };
 
     // function _setListeners() {
     //     this._eventInput.on('menuToggle', function() {
