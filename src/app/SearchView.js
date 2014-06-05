@@ -13,6 +13,7 @@ define(function(require, exports, module) {
     var ScrollView          = require('famous/views/ScrollView');
     var StateModifier       = require('famous/modifiers/StateModifier');
     var EventHandler        = require('famous/core/EventHandler');
+    var Transitionable      = require("famous/transitions/Transitionable");
 
     function SearchView() {
         View.apply(this, arguments);
@@ -20,7 +21,7 @@ define(function(require, exports, module) {
         _createBacking.call(this);
         _createHeaderView.call(this);
         _createBody.call(this);
-        _setListeners.call(this);
+        //_setListeners.call(this);
     }
 
     SearchView.prototype = Object.create(View.prototype);
@@ -28,6 +29,7 @@ define(function(require, exports, module) {
 
     SearchView.DEFAULT_OPTIONS = {
         nameArray: [],
+        targetElement: '',
     };
 
 
@@ -106,7 +108,13 @@ define(function(require, exports, module) {
 
         this.nameSurfaces = [];
 
-        var xPos = [];
+        this.nameMods = [];
+
+        this.lineMods = [];
+
+        this.nameTrans = [];
+
+        this.xPos = [];
 
         for (var i = 0; i < bandNames.length; i++) {
             // console.log((window.innerHeight - 44) / 11);
@@ -128,6 +136,11 @@ define(function(require, exports, module) {
 
             var marginRand = Math.floor((Math.random() * 175) + 1);
 
+            this.offsetTransitionable = new Transitionable(marginRand);
+            this.nameTrans.push(this.offsetTransitionable);
+
+            //console.log(offsetTransitionable);
+
             this.nameSurface = new Surface({
                 size: [bandNames[i].name.length * 11, ((window.innerHeight - 44) / 12) - 15],
                 content: bandNames[i].name,
@@ -136,12 +149,14 @@ define(function(require, exports, module) {
                     color: 'whitesmoke',
                     textAlign: 'center',
                     textVerticalAlign: 'middle',
-                    marginLeft: '' + marginRand + 'px',
+                    //marginLeft: '' + marginRand + 'px',
                     fontSize: '1.25em',
                 }
             });
 
-            this.options.nameArray.push(this.nameSurface);
+            this.nameSurface.index = i;
+
+            this.nameSurfaces.push(this.nameSurface);
 
             lineLengths.push(marginRand);
 
@@ -152,12 +167,13 @@ define(function(require, exports, module) {
             if (lineLengths[i] < 95){
                 marginCorrected.push(rightMargin);
                 var axis = 1;
-                xPos.push(axis);
+                this.xPos.push(axis);
             } else {
                 marginCorrected.push(lineLengths[i]);
                 var axis = 0;
-                xPos.push(axis);
+                this.xPos.push(axis);
             }
+
 
             this.nameLines = new Surface({
                 size: [marginCorrected[i], 3],
@@ -167,37 +183,47 @@ define(function(require, exports, module) {
                 }
             });
 
-            //console.log(marginCorrected);
+            this.nameLines.index = i;
 
-            this.lineState = new StateModifier({origin: [xPos[i], 0.5]});
-
+            this.lineState = new StateModifier({origin: [this.xPos[i], 0.5]});
             this.nameState = new StateModifier({origin: [0, 0.5]});
+            this.lineMod = new Modifier();
+            this.nameMod = new Modifier({transform: Transform.translate(this.offsetTransitionable.get(), 0, 0)});
 
-            this.temp.add(this.nameState).add(this.nameSurface);
-            this.temp.add(this.lineState).add(this.nameLines);
+            this.nameMod.index = i;
+            this.nameMods.push(this.nameMod);
+
+            this.lineMod.index = i;
+            this.lineMods.push(this.lineMod);
+
+            this.temp.add(this.nameState).add(this.nameMod).add(this.nameSurface);
+            this.temp.add(this.lineState).add(this.lineMod).add(this.nameLines);
 
             this.scrollView.subscribe(this.temp);
-            this.nameSurface.pipe(this.eventHandler);
+
+            this.nameSurface.on('touchstart', function(i) {
+                this.listBreak(this.nameSurfaces, this.nameTrans, this.nameMods, this.xPos, this.lineMods, i);
+                this._eventOutput.emit('menuToggle');
+            }.bind(this, i));
 
         }
 
-        this.add(new Modifier({ transform: Transform.translate(0, 44, 0),})).add(this.scrollView);
+        this.add(new Modifier({ transform: Transform.translate(0, 44, 0)})).add(this.scrollView);
     }
 
-    function _setListeners() {
-        this.eventHandler.on('touchstart', function() {
-            this.tagetElement = event.target;
-            //console.log(event.target);
-            console.log(this.nameSurfaces);
-        }.bind(this));
+    /*function _setListeners() {
+        this.eventHandler.on('touchstart', function(event) {
+            console.log(event.origin);
+  
+        }.bind(this, i));
 
         this.eventHandler.on('touchend', function() {
-            this._eventOutput.emit('animateList');
-            this._eventOutput.emit('menuToggle');
+            // this._eventOutput.emit('animateList');
+            // this._eventOutput.emit('menuToggle');
             console.log('zzzzz');
-            SearchView.prototype.animateList(this);
+            this.listBreak(this);
         }.bind(this));
-    }
+    }*/
 
     SearchView.prototype.animateList = function() {
         if(this.animateList) {
@@ -209,16 +235,64 @@ define(function(require, exports, module) {
         this.animateList = !this.animateList;
     };
 
-    SearchView.prototype.listBreak = function() {
-        console.log(this.options.nameArray);
-        var l = this.options.nameArray.length;
-        for (var i = 0; i < l; i++){
-            if (nameSurfaces[i] != this.tagetElement){
+    SearchView.prototype.listBreak = function(nameSurfaces, transitionable, nameMods, origin, lineMods, i) {
+        //console.log(nameSurfaces[i].index);
+        var l = nameSurfaces.length;
+        var clicked = nameSurfaces[i].index;
+        var value;
+        
+        var moveIt = new Transitionable();
+        //console.log(nameMod);
+        //nameMod[5].setOpacity(0.5);
+        //console.log(nameSurfaces[clicked]);
+        //nameMod[i].setTransform(Transform.translate(15, 20, 0));
+        //console.log(clicked);
+        //console.log(!(nameMod[i]));
+
+        for (var x = 0; x < clicked; x++){
+
+            var value = -window.innerWidth;
+            var leftPos = new Transitionable(value);
+            var endValue = window.innerWidth;
+            var rightPos = new Transitionable(endValue);
+            var lineLeft = new Transitionable(value);
+            var lineRight = new Transitionable(endValue);
+
+
+            
+
+            //console.log(leftPos);
+            if (origin[x] == 0){
+                nameMods[x].setTransform(Transform.translate(leftPos.get(), 0, 0), {curve: "easeInOut", duration: 1000});
+                lineMods[x].setTransform(Transform.translate(lineLeft.get(), 0, 0), {curve: "easeInOut", duration: 1200});
 
             } else {
+                nameMods[x].setTransform(Transform.translate(rightPos.get(), 0, 0), {curve: "easeInOut", duration: 1000});
+                lineMods[x].setTransform(Transform.translate(lineRight.get(), 0, 0), {curve: "easeInOut", duration: 1200});
+            }
+            //transitionable[x].state.set(0, {curve: "easeInOut", duration: 1000});
+        }
+        for (var x = clicked + 1; x < l; x++){
+            var value = -window.innerWidth;
+            var leftPos = new Transitionable(value);
+            var endValue = window.innerWidth;
+            var rightPos = new Transitionable(endValue);
+            var lineLeft = new Transitionable(value);
+            var lineRight = new Transitionable(endValue);
+            
 
+            //console.log(leftPos);
+            if (origin[x] == 0){
+                nameMods[x].setTransform(Transform.translate(leftPos.get(), 0, 0), {curve: "easeInOut", duration: 1000});
+                lineMods[x].setTransform(Transform.translate(lineLeft.get(), 0, 0), {curve: "easeInOut", duration: 1000});
+
+            } else {
+                nameMods[x].setTransform(Transform.translate(rightPos.get(), 0, 0), {curve: "easeInOut", duration: 1000});
+                lineMods[x].setTransform(Transform.translate(lineRight.get(), 0, 0), {curve: "easeInOut", duration: 1000});
             }
         }
+
+        
     };
 
     SearchView.prototype.listAssemble = function() {
