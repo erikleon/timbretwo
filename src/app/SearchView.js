@@ -6,7 +6,6 @@ define(function(require, exports, module) {
     var Engine              = require('famous/core/Engine');
 
     var HeaderView          = require('./HeaderView');
-    var NamesView           = require('./NamesView');
 
     var ContainerSurface    = require('famous/surfaces/ContainerSurface');
     var SequentialLayout    = require('famous/views/SequentialLayout');
@@ -21,7 +20,6 @@ define(function(require, exports, module) {
         _createBacking.call(this);
         _createHeaderView.call(this);
         _createBody.call(this);
-        //_setListeners.call(this);
     }
 
     SearchView.prototype = Object.create(View.prototype);
@@ -37,18 +35,29 @@ define(function(require, exports, module) {
         var backing = new Surface({
             properties: {
                 backgroundColor: 'whitesmoke',
-                //boxShadow: '0 0 20px rgba(0,0,0,0.5)'
             }
         });
 
         this._add(backing);
+
+        this.listAssemble = function() {
+            var axis = this.xPos;
+            var l = this.nameSurfaces.length;
+            var nameMods = this.nameMods;
+            var lineMods = this.lineMods;
+            var whereTo = this.nameTrans;
+            for (var i = 0; i < l; i++){
+                nameMods[i].setTransform(Transform.translate(whereTo[i].get(), 0, 1), {curve: "easeInOut", duration: 2000});
+                lineMods[i].setTransform(Transform.translate(0, 0, 0), {curve: "easeInOut", duration: 2000});
+            }
+        };
     }
 
     function _createHeaderView() {
         this.headerView = new HeaderView();
 
         this.headerMod = new Modifier({
-            transform: Transform.translate(0, 0, 1),
+            transform: Transform.translate(0, 0, 2),
         });
 
         this.subscribe(this.headerView);
@@ -100,13 +109,13 @@ define(function(require, exports, module) {
 
         this.temp;
 
-        this.eventHandler = new EventHandler();
-
         var lineLengths = [];
 
         var marginCorrected = [];
 
         this.nameSurfaces = [];
+
+        this.lineSurfaces = [];
 
         this.nameMods = [];
 
@@ -160,7 +169,7 @@ define(function(require, exports, module) {
 
             lineLengths.push(marginRand);
 
-            var rightMargin = Math.floor((window.innerWidth - lineLengths[i]) - (bandNames[i].name.length * 11)); 
+            var rightMargin = Math.floor((window.innerWidth - lineLengths[i])); //- (bandNames[i].name.length * 11)); 
 
             var axis = 0;
 
@@ -185,10 +194,12 @@ define(function(require, exports, module) {
 
             this.nameLines.index = i;
 
+            this.lineSurfaces.push(this.nameLines);
+
             this.lineState = new StateModifier({origin: [this.xPos[i], 0.5]});
             this.nameState = new StateModifier({origin: [0, 0.5]});
-            this.lineMod = new Modifier();
-            this.nameMod = new Modifier({transform: Transform.translate(this.offsetTransitionable.get(), 0, 0)});
+            this.lineMod = new StateModifier();
+            this.nameMod = new Modifier({transform: Transform.translate(this.offsetTransitionable.get(), 0, 1)});
 
             this.nameMod.index = i;
             this.nameMods.push(this.nameMod);
@@ -202,8 +213,10 @@ define(function(require, exports, module) {
             this.scrollView.subscribe(this.temp);
 
             this.nameSurface.on('touchstart', function(i) {
-                this.listBreak(this.nameSurfaces, this.nameTrans, this.nameMods, this.xPos, this.lineMods, i);
+                this.listBreak(this.nameSurfaces, this.nameTrans, this.nameMods, this.xPos, this.lineMods, this.lineSurfaces, i);
                 this._eventOutput.emit('menuToggle');
+                this._eventOutput.emit('jaRock');
+
             }.bind(this, i));
 
         }
@@ -211,43 +224,12 @@ define(function(require, exports, module) {
         this.add(new Modifier({ transform: Transform.translate(0, 44, 0)})).add(this.scrollView);
     }
 
-    /*function _setListeners() {
-        this.eventHandler.on('touchstart', function(event) {
-            console.log(event.origin);
-  
-        }.bind(this, i));
-
-        this.eventHandler.on('touchend', function() {
-            // this._eventOutput.emit('animateList');
-            // this._eventOutput.emit('menuToggle');
-            console.log('zzzzz');
-            this.listBreak(this);
-        }.bind(this));
-    }*/
-
-    SearchView.prototype.animateList = function() {
-        if(this.animateList) {
-            this.listBreak();
-        } else {
-            this.listAssemble();
-            //this.featureView.animateStrips();
-        }
-        this.animateList = !this.animateList;
-    };
-
-    SearchView.prototype.listBreak = function(nameSurfaces, transitionable, nameMods, origin, lineMods, i) {
-        //console.log(nameSurfaces[i].index);
+    SearchView.prototype.listBreak = function(nameSurfaces, transitionable, nameMods, origin, lineMods, lines, i) {
         var l = nameSurfaces.length;
         var clicked = nameSurfaces[i].index;
         var value;
-        
-        var moveIt = new Transitionable();
-        //console.log(nameMod);
-        //nameMod[5].setOpacity(0.5);
-        //console.log(nameSurfaces[clicked]);
-        //nameMod[i].setTransform(Transform.translate(15, 20, 0));
-        //console.log(clicked);
-        //console.log(!(nameMod[i]));
+
+        // Surfaces moving to Right
 
         for (var x = 0; x < clicked; x++){
 
@@ -258,20 +240,18 @@ define(function(require, exports, module) {
             var lineLeft = new Transitionable(value);
             var lineRight = new Transitionable(endValue);
 
-
-            
-
-            //console.log(leftPos);
             if (origin[x] == 0){
-                nameMods[x].setTransform(Transform.translate(leftPos.get(), 0, 0), {curve: "easeInOut", duration: 1000});
-                lineMods[x].setTransform(Transform.translate(lineLeft.get(), 0, 0), {curve: "easeInOut", duration: 1200});
+                nameMods[x].setTransform(Transform.translate(leftPos.get(), 0, 0), {curve: "easeInOut", duration: 500});
+                lineMods[x].setTransform(Transform.translate(lineLeft.get(), 0, 0), {curve: "easeInOut", duration: 500});
 
             } else {
-                nameMods[x].setTransform(Transform.translate(rightPos.get(), 0, 0), {curve: "easeInOut", duration: 1000});
-                lineMods[x].setTransform(Transform.translate(lineRight.get(), 0, 0), {curve: "easeInOut", duration: 1200});
+                nameMods[x].setTransform(Transform.translate(rightPos.get(), 0, 0), {curve: "easeInOut", duration: 500});
+                lineMods[x].setTransform(Transform.translate(lineRight.get(), 0, 0), {curve: "easeInOut", duration: 500});
             }
-            //transitionable[x].state.set(0, {curve: "easeInOut", duration: 1000});
         }
+
+        // Surfaces moving to Left
+
         for (var x = clicked + 1; x < l; x++){
             var value = -window.innerWidth;
             var leftPos = new Transitionable(value);
@@ -280,30 +260,22 @@ define(function(require, exports, module) {
             var lineLeft = new Transitionable(value);
             var lineRight = new Transitionable(endValue);
             
-
-            //console.log(leftPos);
             if (origin[x] == 0){
-                nameMods[x].setTransform(Transform.translate(leftPos.get(), 0, 0), {curve: "easeInOut", duration: 1000});
-                lineMods[x].setTransform(Transform.translate(lineLeft.get(), 0, 0), {curve: "easeInOut", duration: 1000});
+                nameMods[x].setTransform(Transform.translate(leftPos.get(), 0, 0), {curve: "easeInOut", duration: 500});
+                lineMods[x].setTransform(Transform.translate(lineLeft.get(), 0, 0), {curve: "easeInOut", duration: 500});
 
             } else {
-                nameMods[x].setTransform(Transform.translate(rightPos.get(), 0, 0), {curve: "easeInOut", duration: 1000});
-                lineMods[x].setTransform(Transform.translate(lineRight.get(), 0, 0), {curve: "easeInOut", duration: 1000});
+                nameMods[x].setTransform(Transform.translate(rightPos.get(), 0, 0), {curve: "easeInOut", duration: 500});
+                lineMods[x].setTransform(Transform.translate(lineRight.get(), 0, 0), {curve: "easeInOut", duration: 500});
             }
-        }
+        }   
+
+        // Removes the line of the clicked object
+
+        lines[i].setSize([0, 0]);
 
         
     };
-
-    SearchView.prototype.listAssemble = function() {
-        console.log('xxxx');
-    };
-
-    // function _setListeners() {
-    //     this._eventInput.on('menuToggle', function() {
-    //         this._eventOutput.emit('menuToggle');
-    //     }.bind(this));
-    // }
 
     module.exports = SearchView;
 });

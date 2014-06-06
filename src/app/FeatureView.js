@@ -6,9 +6,7 @@ define(function(require, exports, module) {
     var Timer               = require('famous/utilities/Timer');
 
     var HeaderFooterLayout  = require('famous/views/HeaderFooterLayout');
-
-    var StripView           = require('./StripView');
-    var FeaturedView        = require('./FeaturedView');
+    
     var SearchView          = require('./SearchView');
 
     var SequentialLayout    = require('famous/views/SequentialLayout');
@@ -23,7 +21,6 @@ define(function(require, exports, module) {
         _createFeatureLayout.call(this);
         _createBacking.call(this);
         _setListeners.call(this);
-        //_createFeaturedView.call(this);
     }
 
     FeatureView.prototype = Object.create(View.prototype);
@@ -47,6 +44,40 @@ define(function(require, exports, module) {
         });
 
         this._add(this.backImgMod).add(backImg);
+
+        this.buttonSlide = function() {
+    
+            var headMod = this.headMod;
+            var infoMod = this.infoContainerMod;
+            var buttonMod = this.buttonMod;
+            var shareMod = this.shareMod;
+            var starMod = this.starMod;
+
+            Timer.setTimeout(function(){
+                headMod.setTransform(Transform.translate(0, 0, 0), {curve: "easeInOut", duration: 250});
+                infoMod.setTransform(Transform.translate(15, 200, 0), {curve: "easeInOut", duration: 250});
+                shareMod.setTransform(Transform.translate(215, 20, 2), {curve: "easeInOut", duration: 500});
+                buttonMod.setTransform(Transform.translate(15, 20, 2), {curve: "easeInOut", duration: 500});
+                starMod.setTransform(Transform.translate(115, 20, 1), {curve: "easeInOut", duration: 500});
+            }, 1500);
+        };
+
+        this.resetButtons = function() {
+            var headMod = this.headMod;
+            var infoMod = this.infoContainerMod;
+            var buttonMod = this.buttonMod;
+            var shareMod = this.shareMod;
+            var starMod = this.starMod;
+
+            Timer.setTimeout(function(){
+                headMod.setTransform(Transform.translate(0, -44, 0));
+                infoMod.setTransform(Transform.translate(15, 244, 0));
+                shareMod.setTransform(Transform.translate(-(90 + window.innerWidth), 20, 2));
+                buttonMod.setTransform(Transform.translate(-(90 + window.innerWidth), 20, 2));
+                starMod.setTransform(Transform.translate(-(90 + window.innerWidth), 20, 1));
+            }, 1250);
+
+        };
     }
 
     // Creates Feature Page
@@ -70,6 +101,10 @@ define(function(require, exports, module) {
             }
         });
 
+        this.headMod = new StateModifier({
+            transform: Transform.translate(0, -44, 0),
+        });
+
         this.searchToggle = new Surface({
             content: ' ' + '&lang; Search',
             size: [true, 44],
@@ -87,10 +122,7 @@ define(function(require, exports, module) {
         // ContainerSurface to hold body surfaces
         var layoutBody = new ContainerSurface({
             size: [undefined, undefined],
-            //content: "Content",
             properties: {
-                //lineHeight: '150px',
-                //textAlign: "center",
                 backgroundColor: 'rgba(255, 255, 255, 0)',
                 
             }
@@ -106,28 +138,31 @@ define(function(require, exports, module) {
 
         var webButton = new ImageSurface({
             size: [90, 90],
-            //content: '<img width="50" src="' + buttonImg[0].iconUrl + '"/>',
         });
         webButton.setContent('../img/web.png');
 
         var starButton = new ImageSurface({
             size: [90, 90],
-            //content: '<img width="50" src="' + buttonImg[1].iconUrl + '"/>',
         });
         starButton.setContent('../img/star.png');
 
 
         var shareButton = new ImageSurface({
             size: [90, 90],
-            //content: '<img width="50" src="' + buttonImg[2].iconUrl + '"/>',
         });
         shareButton.setContent('../img/share.png');
 
 
         // Share buttons modifiers
-        this.buttonMod = new Modifier();
-        this.starMod = new Modifier();
-        this.shareMod = new Modifier();
+        this.buttonMod = new Modifier({
+            transform: Transform.translate(-(90 + window.innerWidth), 20, 0),
+        });
+        this.starMod = new Modifier({
+            transform: Transform.translate(-(90 + window.innerWidth), 20, 1),
+        });
+        this.shareMod = new Modifier({
+            transform: Transform.translate(-(90 + window.innerWidth), 20, 2),
+        });
 
         var infoContainer = new ContainerSurface({
             size: [290, 200],
@@ -136,14 +171,14 @@ define(function(require, exports, module) {
             }
         });
 
-        this.infoContainerMod = new Modifier({
-            transform: Transform.translate(15, 200, 0),
+        this.infoContainerMod = new StateModifier({
+            transform: Transform.translate(15, 244, 1),
         });
 
         var subInfoContainer = new ContainerSurface({
             size: [290, 44],
             properties: {
-                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                backgroundColor: 'rgba(0, 0, 0, 1)',
             }
         });
 
@@ -207,7 +242,6 @@ define(function(require, exports, module) {
             size: [undefined, 44],
             properties: {
                 backgroundColor: 'rgba(0, 0, 0, 0.77)',
-                //opacity: 0.5,                
             }
         });
 
@@ -248,9 +282,9 @@ define(function(require, exports, module) {
         layoutHead.add(this.toggleMod.setOpacity(1)).add(this.searchToggle);
 
         // Body Content and Modifiers are added to Body Container Surface
-        layoutBody.add(this.buttonMod.setTransform(Transform.translate(15, 20, 0))).add(webButton);
-        layoutBody.add(this.starMod.setTransform(Transform.translate(115, 20, 1))).add(starButton);
-        layoutBody.add(this.shareMod.setTransform(Transform.translate(215, 20, 2))).add(shareButton);
+        layoutBody.add(this.buttonMod).add(webButton);
+        layoutBody.add(this.starMod).add(starButton);
+        layoutBody.add(this.shareMod).add(shareButton);
         layoutBody.add(this.infoContainerMod).add(infoContainer);
         layoutBody.add(this.subInfoContainerMod).add(subInfoContainer);
         
@@ -263,7 +297,7 @@ define(function(require, exports, module) {
 
 
         // Adds header, body, and footer to layout view
-        featureLayout.header.add(layoutHead);
+        featureLayout.header.add(this.headMod).add(layoutHead);
         featureLayout.content.add(layoutBody);
         featureLayout.footer.add(layoutFoot);
 
@@ -271,6 +305,8 @@ define(function(require, exports, module) {
         // Event Handler to work with _setListeners
         this.eventHandler = new EventHandler();
         this.searchToggle.pipe(this.eventHandler);
+        this.secondEvent = new EventHandler();
+        this.secondEvent.subscribe(FeatureView);
 
 
         // layout view modifier
@@ -280,44 +316,12 @@ define(function(require, exports, module) {
         this._add(this.layoutMod).add(featureLayout);
     }
 
-    /*FeatureView.prototype.resetStrips = function() {
-        for(var i = 0; i < this.stripModifiers.length; i++) {
-            var initX = -this.options.stripWidth;
-            var initY = this.options.topOffset
-                + this.options.stripOffset*i
-                + this.options.stripWidth*Math.tan(-this.options.angle);
-
-            this.stripModifiers[i].setTransform(Transform.translate(initX, initY, 0));
-        }
-
-        this.featuredMod.setOpacity(0);
-    };
-
-    FeatureView.prototype.animateStrips = function() {
-        this.resetStrips();
-
-        for(var i = 0; i < this.stripModifiers.length; i++) {
-            // use Timer.setTimeout instead of window.setTimeout
-            // Time can be found in famous/utilities
-
-            Timer.setTimeout(function(i) {
-                var yOffset = this.options.topOffset + this.options.stripOffset * i;
-
-                this.stripModifiers[i].setTransform(
-                    Transform.translate( 0, yOffset, 0),
-                    { duration: this.options.duration, curve: 'easeOut' });
-            }.bind(this, i), i*this.options.staggerDelay);
-        }
-
-        Timer.setTimeout((function() {
-            this.featuredMod.setOpacity(1, { duration: this.options.duration, curve: 'easeInOut' });
-        }).bind(this), this.options.duration);
-    };*/
-
     function _setListeners() {
+
         this.eventHandler.on('touchstart', function() {
             //console.log();
             this.toggleMod.setOpacity(0.5);
+            this._eventOutput.emit('reset search');
         }.bind(this));
 
         this.eventHandler.on('touchend', function() {

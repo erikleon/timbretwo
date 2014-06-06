@@ -5,6 +5,9 @@ define(function(require, exports, module) {
     var View            = require('famous/core/View');
     var GenericSync     = require('famous/inputs/GenericSync');
     var Transitionable  = require('famous/transitions/Transitionable');
+    var Timer           = require('famous/utilities/Timer');
+    var StateModifier   = require('famous/modifiers/StateModifier');
+    var EventHandler    = require('famous/core/EventHandler');
 
     var SearchView        = require('./SearchView');
     var FeatureView        = require('./FeatureView');
@@ -14,7 +17,6 @@ define(function(require, exports, module) {
 
         _createSearchView.call(this);
         _createFeatureView.call(this);
-        //_handleTouch.call(this);
     }
 
     AppView.prototype = Object.create(View.prototype);
@@ -32,101 +34,65 @@ define(function(require, exports, module) {
     function _createSearchView() {
         this.searchView = new SearchView();
 
-        //this.searchView.on('menuToggle', this.toggleMenu.bind(this));
+        this.searchView.on('menuToggle', this.toggleMenu.bind(this));
 
         this.menuToggle = false;
 
         this.searchMod = new Modifier();
 
         this._add(this.searchMod).add(this.searchView);
+
+
+        this.searchView.on('jaRock', function(){
+            this.featureView.buttonSlide();
+        }.bind(this));
+
+
     }
 
     function _createFeatureView() {
         this.featureView = new FeatureView();
 
-        this.featureView.on('menuToggle', this.toggleMenu.bind(this));
-
         this.menuToggle = false;
 
-        this.featureMod = new Modifier({
+        this.featureMod = new StateModifier({
             transform: Transform.translate(window.innerWidth, 0, 3)
         });
 
         this._add(this.featureMod).add(this.featureView);
-    }
-/*
-    function _handleTouch() {
-        this.pageViewPos = new Transitionable(0);
+        
+        this.featureView.on('menuToggle', this.toggleMenu.bind(this));
 
-        this.sync = new GenericSync(function() {
-            return this.pageViewPos.get(0);
-        }.bind(this), {direction: GenericSync.DIRECTION_X});
-
-        this.searchView.pipe(this.sync);
-
-        this.sync.on('update', function(data) {
-            if(this.pageViewPos.get() === 0 && data.p > 0) {
-                this.FeatureView.animateStrips();
-            }
-
-            this.pageViewPos.set(Math.max(0, data.p));
+        this.featureView.on('reset search', function(){
+            this.searchView.listAssemble();
+            this.featureView.resetButtons();
         }.bind(this));
-
-        this.sync.on('end', (function(data) {
-            var velocity = data.v;
-            var position = this.pageViewPos.get();
-
-            if(this.pageViewPos.get() > this.options.posThreshold) {
-                if(velocity < -this.options.velThreshold) {
-                    this.slideLeft();
-                } else {
-                    this.slideRight();
-                }
-            } else {
-                if(velocity > this.options.velThreshold) {
-                    this.slideRight();
-                } else {
-                    this.slideLeft();
-                }
-            }
-        }).bind(this));
-    }*/
+        
+    }
 
     AppView.prototype.toggleMenu = function() {
         if(this.menuToggle) {
             this.slideRight();
         } else {
-            this.slideLeft();
+            Timer.setTimeout(this.slideLeft.bind(this), 500);
             //this.featureView.animateStrips();
         }
         this.menuToggle = !this.menuToggle;
     };
 
     AppView.prototype.slideLeft = function() {
-        this.featureMod.setTransform(Transform.translate(0, 0, 3))
+        var startPos = window.innerWidth;
+        var featureSlide = new Transitionable(startPos);
+        //console.log(this.featureMod);
+        this.featureMod.setTransform(Transform.translate(0, 0, 3), {curve: "easeIn", duration: 1000});
+        this.searchMod.setTransform(Transform.translate(-window.innerWidth, 0, 0), {curve: "easeIn", duration: 1000});
+        
     };
 
     AppView.prototype.slideRight = function() {
-        this.featureMod.setTransform(Transform.translate(window.innerWidth, 0, 3))
+        this.featureMod.setTransform(Transform.translate(window.innerWidth, 0, 3), {curve: "easeIn", duration: 1000});
+        this.searchMod.setTransform(Transform.translate(0, 0, 0), {curve: "easeIn", duration: 1000});
     };
-
-    /*AppView.prototype.render = function() {
-        this.spec = [];
-
-        this.spec.push({
-            // opacity: 0.5,
-            // size: [300, 300],
-            transform: Transform.translate(0, 0, -1),
-            target: this.featureView.render()
-        });
-
-        this.spec.push({
-            transform: Transform.translate(this.pageViewPos.get(), 0, 0),
-            target: this.searchView.render()
-        });
-
-        return this.spec;
-    };*/
 
     module.exports = AppView;
 });
